@@ -1,42 +1,42 @@
-const express = require("express");
-const cors = require("cors");
-const app = express();
+module.exports = (req, res) => {
+    // 1. ABRINDO AS PORTAS (Substitui a biblioteca CORS)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type']
-}));
+    // Resposta rápida para o navegador saber que a porta está aberta antes de enviar os dados
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
-app.use(express.json());
+    // 2. TESTE NO NAVEGADOR
+    if (req.method === 'GET') {
+        return res.status(200).send("Servidor Nativo e Ultra-Leve Ativo! ⚡");
+    }
 
-// Apenas para teste no navegador
-app.get("/", (req, res) => {
-    res.send("Servidor Vercel Ativo e Voando! ⚡");
-});
-
-// A ROTA PRINCIPAL DA EXTENSÃO
-app.post("/organizar-lotes", (req, res) => {
-    const processos = req.body.processos || [];
-    
-    const contagem = {};
-    processos.forEach(p => {
-        const nome = p.promotoria || "Desconhecida";
-        contagem[nome] = (contagem[nome] || 0) + 1;
-    });
-
-    const lotesProntos = Object.keys(contagem)
-        .sort()
-        .map(nome => {
-            return { nomeLote: nome, quantidade: contagem[nome] };
+    // 3. A LÓGICA DA EXTENSÃO (O Motor de Contagem)
+    if (req.method === 'POST') {
+        const processos = req.body.processos || [];
+        
+        const contagem = {};
+        processos.forEach(p => {
+            const nome = p.promotoria || "Desconhecida";
+            contagem[nome] = (contagem[nome] || 0) + 1;
         });
 
-    res.json({
-        sucesso: true,
-        lotes: lotesProntos
-    });
-});
+        const lotesProntos = Object.keys(contagem)
+            .sort()
+            .map(nome => {
+                return { nomeLote: nome, quantidade: contagem[nome] };
+            });
 
-// A MÁGICA DA VERCEL ESTÁ AQUI:
-// Em vez de ligar o servidor localmente, nós o exportamos.
-module.exports = app;
+        return res.status(200).json({
+            sucesso: true,
+            lotes: lotesProntos
+        });
+    }
+
+    // Se chegar qualquer outra coisa, devolve erro 404
+    return res.status(404).json({ erro: "Rota não encontrada" });
+};
